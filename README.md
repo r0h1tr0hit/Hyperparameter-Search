@@ -1,2 +1,2 @@
 # Hyperparameter-Search
-Comparing and analyzing two hyper-parameter search techniques, Bayesian Optimization and Genetic Algorithm.
+Implementing two hyperparameter searching techniques, Bayesian Optimization and Genetic Algorithm to search for hyperparmeters in two settings: a statistical machine learning algorithm and a deep neural network architecture. Comparing and analyzing these two techniques on the metrics of time complexity, search space exploration, memory requirement and parallelism capabilities.
