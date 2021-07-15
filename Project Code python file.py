@@ -34,7 +34,10 @@ y = iris.target
 """# **Splitting and preprocessing the data**"""
 
 from sklearn import preprocessing
+import copy
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.25 , random_state = 21)
+y_train_gen = copy.deepcopy(y_train)
+y_test_gen = copy.deepcopy(y_test)
 x_train = preprocessing.normalize(x_train)
 x_test = preprocessing.normalize(x_test)
 x_train = x_train*2 - 1
@@ -87,19 +90,20 @@ search_space = {'criterion': hp.choice('criterion', c ),
         'n_estimators' : hp.choice('n_estimators', n)
     }
 
-params = fmin(fn= Optimization,  space= search_space, algo= tpe.suggest, max_evals = 100, trials= Trials())
+params = fmin(fn= Optimization,  space= search_space, algo= tpe.suggest, max_evals = 10, trials= Trials())
 
 params
 
-rfc = RandomForestClassifier( n_estimators = n[params['n_estimators']] ,criterion = c[params['criterion']] ,
+rfc_bayes = RandomForestClassifier( n_estimators = n[params['n_estimators']] ,criterion = c[params['criterion']] ,
                              max_depth = d[params['max_depth']] , max_features = f[params['max_features']] ,
                              min_samples_leaf = params['min_samples_leaf'] , min_samples_split = params['min_samples_split']
                              )
 
-rfc.fit(x_train , y_train)
+rfc_bayes.fit(x_train , y_train)
 
-pred = rfc.predict(x_test)
-print("Accuracy = ", accuracy_score(y_test, pred))
+pred = rfc_bayes.predict(x_test)
+accuracy = accuracy_score(y_test, pred)
+print("Accuracy = ", accuracy)
 
 """# **Genetic Algorithm for Hyperparameter search in Random Forest Classifier**
 
@@ -117,7 +121,7 @@ search_space = {'n_estimators': n,'criterion': c, 'max_features': f, 'max_depth'
                 'min_samples_split': split, 'min_samples_leaf': leaf
                 }
 
-rfc_tpot = TPOTClassifier(generations= 10, population_size= 24, offspring_size= 12,
+rfc_tpot = TPOTClassifier(generations= 2, population_size= 24, offspring_size= 12,
                                  verbosity= 2, early_stop= 12,
                                  config_dict={'sklearn.ensemble.RandomForestClassifier': search_space}, 
                                  cv = 5, scoring = 'accuracy')
@@ -268,7 +272,7 @@ def Optimization_deep(space):
   print('Test accuracy:', acc)
   return {'loss': -acc, 'status': STATUS_OK, 'model': model}
 
-params = fmin(fn= Optimization_deep, space = space, algo= tpe.suggest, max_evals = 50, trials= Trials())
+params = fmin(fn= Optimization_deep, space = space, algo= tpe.suggest, max_evals = 2, trials= Trials())
 
 params
 
@@ -284,24 +288,24 @@ final_model.add(Dense(hidden_units[params['Dense2']]))
 final_model.add(Activation(activation[params['Activation2']]))
 final_model.add(Dropout(params['Dropout2']))
     
-if space['hidden_layers'] >=2:
+if hlayers[params['hidden_layers']] >=2:
   final_model.add(Dense(hidden_units[params['Dense3']]))
-  final_model.add(Activation(activation[params['Activation3']]))
+  final_model.add(Activation(activation[params['Activation2']]))
   final_model.add(Dropout(params['Dropout3']))
 
-if space['hidden_layers'] >= 3:
+if hlayers[params['hidden_layers']] >= 3:
   final_model.add(Dense(hidden_units[params['Dense4']]))
-  final_model.add(Activation(activation[params['Activation3']]))
+  final_model.add(Activation(activation[params['Activation2']]))
   final_model.add(Dropout(params['Dropout4']))
 
-if space['hidden_layers'] >= 4:
+if hlayers[params['hidden_layers']] >= 4:
   final_model.add(Dense(hidden_units[params['Dense5']]))
-  final_model.add(Activation(activation[params['Activation3']]))
+  final_model.add(Activation(activation[params['Activation2']]))
   final_model.add(Dropout(params['Dropout5']))
 
-if space['hidden_layers'] == 5:
+if hlayers[params['hidden_layers']] == 5:
   final_model.add(Dense(hidden_units[params['Dense6']]))
-  final_model.add(Activation(activation[params['Activation3']]))
+  final_model.add(Activation(activation[params['Activation2']]))
   final_model.add(Dropout(params['Dropout6']))
         
 final_model.add(Dense(classes))
@@ -359,12 +363,12 @@ search_space = {'hidden_layer_sizes': hidden_layer_sizes,
                 'batch_size' : batch_size
                 }
 
-NN_tpot = TPOTClassifier(generations = 5, population_size= 12, offspring_size= 6,
+NN_tpot = TPOTClassifier(generations = 1, population_size= 12, offspring_size= 6,
                                  verbosity= 2, early_stop= 12,
                                  config_dict={'sklearn.neural_network.MLPClassifier': search_space}, 
                                  cv = 5, scoring = 'accuracy')
 
-NN_tpot.fit(x_train, y_train)
+NN_tpot.fit(x_train, y_train_gen)
 
-accuracy = NN_tpot.score(x_test, y_test)
+accuracy = NN_tpot.score(x_test, y_test_gen)
 print(accuracy)
